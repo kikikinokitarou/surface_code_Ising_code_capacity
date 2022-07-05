@@ -193,89 +193,88 @@ def gene_costfunc(ER_pure):
     for i in range(num_qubit):
         if i<ls**2:
             if i%ls==0:
-                H_cost-=10*binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls])
+                H_cost-=1*binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls])
             elif i%ls==ls-1:
-                H_cost-=10*binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])
+                H_cost-=1*binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])
             else:
-                H_cost-=10*binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])*binary_to_spin(x[i-i//ls])
+                H_cost-=1*binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])*binary_to_spin(x[i-i//ls])
         else:
-            H_cost-=10*binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-ls**2])*binary_to_spin(x[i-ls**2+ls-1])
+            H_cost-=1*binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-ls**2])*binary_to_spin(x[i-ls**2+ls-1])
             
 
     #Zエラーについて
     for i in range(num_qubit):
         if i<ls**2:
             if i<ls:
-                H_cost-=10*binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i])
+                H_cost-=1*binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i])
             elif i>=ls*(ls-1):
-                H_cost-=10*binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i-ls])
+                H_cost-=1*binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i-ls])
             else:
-                H_cost-=10*binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i-ls])*binary_to_spin(z[i])
+                H_cost-=1*binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i-ls])*binary_to_spin(z[i])
         else:
-            H_cost-=10*binary_to_spin(ER_pure[0][i])*binary_to_spin(z[i-ls**2+(i-ls**2)//(ls-1)])*binary_to_spin(z[i-ls**2+(i-ls**2)//(ls-1)+1])
+            H_cost-=1*binary_to_spin(ER_pure[0][i])*binary_to_spin(z[i-ls**2+(i-ls**2)//(ls-1)])*binary_to_spin(z[i-ls**2+(i-ls**2)//(ls-1)+1])
             
         
     #Yエラーについて(XエラーとZエラーを打ち消す)
 
     #2つのスタビライザーに挟まれたビット
-    H_cost-=20*spin_to_binary( -binary_to_spin(ER_pure[0][0])*binary_to_spin(x[0]) )*spin_to_binary( -binary_to_spin(ER_pure[1][0])*binary_to_spin(z[0]) )
-    H_cost-=20*spin_to_binary(- binary_to_spin(ER_pure[0][ls-1])*binary_to_spin(x[ls-2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls-1])*binary_to_spin(z[ls-1]) )
-    H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)])*binary_to_spin(x[(ls-1)**2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)])*binary_to_spin(z[ls*(ls-2)]))
-    H_cost-=20*spin_to_binary(- binary_to_spin(ER_pure[0][ls**2-1])*binary_to_spin(x[ls*(ls-1)-1]))*spin_to_binary(- binary_to_spin(ER_pure[1][ls**2-1])*binary_to_spin(z[ls*(ls-1)-1]))
+    H_cost-=2*spin_to_binary( -binary_to_spin(ER_pure[0][0])*binary_to_spin(x[0]) )*spin_to_binary( -binary_to_spin(ER_pure[1][0])*binary_to_spin(z[0]) )
+    H_cost-=2*spin_to_binary(- binary_to_spin(ER_pure[0][ls-1])*binary_to_spin(x[ls-2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls-1])*binary_to_spin(z[ls-1]) )
+    H_cost-=2*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)])*binary_to_spin(x[(ls-1)**2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)])*binary_to_spin(z[ls*(ls-2)]))
+    H_cost-=2*spin_to_binary(- binary_to_spin(ER_pure[0][ls**2-1])*binary_to_spin(x[ls*(ls-1)-1]))*spin_to_binary(- binary_to_spin(ER_pure[1][ls**2-1])*binary_to_spin(z[ls*(ls-1)-1]))
 
     #3つのスタビライザーに囲まれた量子ビット
     for i in range(1,ls-1):
-        H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])*binary_to_spin(x[i-i//ls]))*spin_to_binary(-binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i]))
-        H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i])*binary_to_spin(x[(ls-1)*i]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i])*binary_to_spin(z[ls*i-ls])*binary_to_spin(z[ls*i]))
-        H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+(ls-1)])*binary_to_spin(x[ls*i+(ls-1)-(i+1)]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+(ls-1)])*binary_to_spin(z[ls*i+(ls-1)-ls])*binary_to_spin(z[ls*i+(ls-1)]))
-        H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)+i])*binary_to_spin(x[ls*(ls-1)+i-ls])*binary_to_spin(x[ls*(ls-1)+i-ls+1]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)+i])*binary_to_spin(z[ls*(ls-1)+i-ls]))
+        H_cost-=2*spin_to_binary(-binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])*binary_to_spin(x[i-i//ls]))*spin_to_binary(-binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i]))
+        H_cost-=2*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i])*binary_to_spin(x[(ls-1)*i]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i])*binary_to_spin(z[ls*i-ls])*binary_to_spin(z[ls*i]))
+        H_cost-=2*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+(ls-1)])*binary_to_spin(x[ls*i+(ls-1)-(i+1)]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+(ls-1)])*binary_to_spin(z[ls*i+(ls-1)-ls])*binary_to_spin(z[ls*i+(ls-1)]))
+        H_cost-=2*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)+i])*binary_to_spin(x[ls*(ls-1)+i-ls])*binary_to_spin(x[ls*(ls-1)+i-ls+1]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)+i])*binary_to_spin(z[ls*(ls-1)+i-ls]))
         
         
     #4つのスタビライザーに囲まれた量子ビット
     for i in range(1,ls-1):
         for j in range(1,ls-1):
-            H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+j])*binary_to_spin(x[(ls-1)*i+j-1])*binary_to_spin(x[(ls-1)*i+j]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+j])*binary_to_spin(z[ls*(i-1)+j])*binary_to_spin(z[ls*i+j]))
+            H_cost-=2*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+j])*binary_to_spin(x[(ls-1)*i+j-1])*binary_to_spin(x[(ls-1)*i+j]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+j])*binary_to_spin(z[ls*(i-1)+j])*binary_to_spin(z[ls*i+j]))
 
             
             
     for i in range(ls-1):
         for j in range(ls-1):
-            H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(x[(ls-1)*i+j])*binary_to_spin(x[(ls-1)*(i+1)+j]))*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(z[ls*i+j])*binary_to_spin(z[ls*i+j+1]))
+            H_cost-=2*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(x[(ls-1)*i+j])*binary_to_spin(x[(ls-1)*(i+1)+j]))*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(z[ls*i+j])*binary_to_spin(z[ls*i+j+1]))
 
 
     #Yエラーについて（Yエラーを数える）
 
     #2つのスタビライザーに挟まれたビット
-    H_cost+=10*spin_to_binary( -binary_to_spin(ER_pure[0][0])*binary_to_spin(x[0]) )*spin_to_binary( -binary_to_spin(ER_pure[1][0])*binary_to_spin(z[0]) )
-    H_cost+=10*spin_to_binary(- binary_to_spin(ER_pure[0][ls-1])*binary_to_spin(x[ls-2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls-1])*binary_to_spin(z[ls-1]) )
-    H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)])*binary_to_spin(x[(ls-1)**2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)])*binary_to_spin(z[ls*(ls-2)]))
-    H_cost+=10*spin_to_binary(- binary_to_spin(ER_pure[0][ls**2-1])*binary_to_spin(x[ls*(ls-1)-1]))*spin_to_binary(- binary_to_spin(ER_pure[1][ls**2-1])*binary_to_spin(z[ls*(ls-1)-1]))
+    H_cost+=1*spin_to_binary( -binary_to_spin(ER_pure[0][0])*binary_to_spin(x[0]) )*spin_to_binary( -binary_to_spin(ER_pure[1][0])*binary_to_spin(z[0]) )
+    H_cost+=1*spin_to_binary(- binary_to_spin(ER_pure[0][ls-1])*binary_to_spin(x[ls-2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls-1])*binary_to_spin(z[ls-1]) )
+    H_cost+=1*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)])*binary_to_spin(x[(ls-1)**2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)])*binary_to_spin(z[ls*(ls-2)]))
+    H_cost+=1*spin_to_binary(- binary_to_spin(ER_pure[0][ls**2-1])*binary_to_spin(x[ls*(ls-1)-1]))*spin_to_binary(- binary_to_spin(ER_pure[1][ls**2-1])*binary_to_spin(z[ls*(ls-1)-1]))
 
     #3つのスタビライザーに囲まれた量子ビット
     for i in range(1,ls-1):
-        H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])*binary_to_spin(x[i-i//ls]))*spin_to_binary(-binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i]))
-        H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i])*binary_to_spin(x[(ls-1)*i]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i])*binary_to_spin(z[ls*i-ls])*binary_to_spin(z[ls*i]))
-        H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+(ls-1)])*binary_to_spin(x[ls*i+(ls-1)-(i+1)]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+(ls-1)])*binary_to_spin(z[ls*i+(ls-1)-ls])*binary_to_spin(z[ls*i+(ls-1)]))
-        H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)+i])*binary_to_spin(x[ls*(ls-1)+i-ls])*binary_to_spin(x[ls*(ls-1)+i-ls+1]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)+i])*binary_to_spin(z[ls*(ls-1)+i-ls]))
+        H_cost+=1*spin_to_binary(-binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])*binary_to_spin(x[i-i//ls]))*spin_to_binary(-binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i]))
+        H_cost+=1*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i])*binary_to_spin(x[(ls-1)*i]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i])*binary_to_spin(z[ls*i-ls])*binary_to_spin(z[ls*i]))
+        H_cost+=1*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+(ls-1)])*binary_to_spin(x[ls*i+(ls-1)-(i+1)]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+(ls-1)])*binary_to_spin(z[ls*i+(ls-1)-ls])*binary_to_spin(z[ls*i+(ls-1)]))
+        H_cost+=1*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)+i])*binary_to_spin(x[ls*(ls-1)+i-ls])*binary_to_spin(x[ls*(ls-1)+i-ls+1]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)+i])*binary_to_spin(z[ls*(ls-1)+i-ls]))
         
         
     #4つのスタビライザーに囲まれた量子ビット
     for i in range(1,ls-1):
         for j in range(1,ls-1):
-            H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+j])*binary_to_spin(x[(ls-1)*i+j-1])*binary_to_spin(x[(ls-1)*i+j]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+j])*binary_to_spin(z[ls*(i-1)+j])*binary_to_spin(z[ls*i+j]))
+            H_cost+=1*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+j])*binary_to_spin(x[(ls-1)*i+j-1])*binary_to_spin(x[(ls-1)*i+j]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+j])*binary_to_spin(z[ls*(i-1)+j])*binary_to_spin(z[ls*i+j]))
 
             
             
     for i in range(ls-1):
         for j in range(ls-1):
-            H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(x[(ls-1)*i+j])*binary_to_spin(x[(ls-1)*(i+1)+j]))*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(z[ls*i+j])*binary_to_spin(z[ls*i+j+1]))
-    return H_cost
+            H_cost+=1*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(x[(ls-1)*i+j])*binary_to_spin(x[(ls-1)*(i+1)+j]))*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(z[ls*i+j])*binary_to_spin(z[ls*i+j+1]))
+    return H_cost*10
 
 #最適化
 def solve(H,schedule_list):
-    model=H.compile(strength=20)
+    model=H.compile(strength=30)
     qubo , offset=model.to_qubo()
-    print(qubo)
     sampler=oj.SASampler(start,schedule=schedule_list)
     response=sampler.sample_qubo(qubo)
     for i in range(2):
@@ -348,12 +347,13 @@ def show_error(error):
     for i in range(num_qubit):
         if(error[1][i]==1):
             print('z: ',i)
+#発生したエラーの個数のカウント
 
-#エラーの個数のカウント
-def count_error(error):
+#推定したエラーの個数のカウント
+def count_result(error):
     l=0
     for i in range(num_qubit):
-            l+=error[0][i]+error[1][i]+error[2][i]
+            l+=error[0][i]+error[1][i]
     return l
 
 def recovery(error):
@@ -377,74 +377,130 @@ def judge_logical():
 
 gene_sta()
 gene_logical()
-schedule_list=gene_SAschedule(0.07)
-
-qubit[0][1]=1
-qubit[0][4]=1
 
 
+for p in range(3,11):
+    p_phys=p/100
+    p_phys+=0.005
+    p_logi=0
+    events_logi=0
+    schedule_list=gene_SAschedule(2*p_phys/3)
+    excution_time=0
+    for i in range(3):
+        initialize()
+        gene_error(p_phys/3,p_phys/3,p_phys/3)
 
-initialize()
+        syndrome_meas()
 
-
-syndrome_meas()
-
-
-ER_pure=gene_pureerror()
-
-
-
-H=gene_costfunc(ER_pure)
-
-solve(H,schedule_list)
-ER=est_error(ER_pure)
-l=count_error(ER)
-
-
-ER_pure_x=gene_pureerror_x(ER_pure)
-H_x=gene_costfunc(ER_pure_x)
-solve(H_x,schedule_list)
-ER_x=est_error(ER_pure_x)
-l_x=count_error(ER_x)
+        start1=time.time()
+        ER_pure=gene_pureerror()
+        end1=time.time()
 
 
+        H=gene_costfunc(ER_pure)
+        solve(H,schedule_list)
+        ER=est_error(ER_pure)
+        l=count_result(ER)
 
-ER_pure_z=gene_pureerror_z(ER_pure)
-H_z=gene_costfunc(ER_pure_z)
-solve(H_z,schedule_list)
-ER_z=est_error(ER_pure_z)
-l_z=count_error(ER_z)
-
-
-ER_pure_xz=gene_pureerror_xz(ER_pure)
-H_xz=gene_costfunc(ER_pure_xz)
-solve(H_xz,schedule_list)
-ER_xz=est_error(ER_pure_xz)
-l_xz=count_error(ER_xz)
-
-
-l_min=min(l,l_x,l_z,l_xz)
+        start2=time.time()
+        ER_pure_x=gene_pureerror_x(ER_pure)
+        H_x=gene_costfunc(ER_pure_x)
+        solve(H_x,schedule_list)
+        ER_x=est_error(ER_pure_x)
+        l_x=count_result(ER_x)
+        end2=time.time()
 
 
-
-if(l_min==l):
-    recovery(ER)
-
-elif(l_min==l_x):
-    recovery(ER_x)
-
-elif(l_min==l_z):
-    recovery(ER_z)
-
-elif(l_min==l_xz):
-    recovery(ER_xz)
+        ER_pure_z=gene_pureerror_z(ER_pure)
+        H_z=gene_costfunc(ER_pure_z)
+        solve(H_z,schedule_list)
+        ER_z=est_error(ER_pure_z)
+        l_z=count_result(ER_z)
 
 
-if(judge_logical()):
-    print("logical_error")
+        ER_pure_xz=gene_pureerror_xz(ER_pure)
+        H_xz=gene_costfunc(ER_pure_xz)
+        solve(H_xz,schedule_list)
+        ER_xz=est_error(ER_pure_xz)
+        l_xz=count_result(ER_xz)
 
 
+        l_min=min(l,l_x,l_z,l_xz)
+    
+        excution_time+=end1-start1+end2-start2
+        #print("発生したエラー")
+        #Sshow_error(qubit)
+        if(l_min==l):
+            #print("初期エラー")
+            #show_error(ER_pure)
+            #print("推定したエラー(論理エラーなし)")
+            #show_result(ER)
+            #print("初期エラー(論理エラーX)")
+            #show_error(ER_pure_x)
+            #print("推定したエラー(論理エラーX)")
+            #show_result(ER_x)
+            #print("初期エラー(論理エラーZ)")
+            #show_error(ER_pure_z)
+            #print("推定したエラー(論理エラーZ)")
+            #show_result(ER_z)
+            recovery(ER)
+            #print("訂正後")
+            #show_error(qubit)
+            #print("エラーチェーンの長さ")
+            #print(l,l_x,l_z,l_xz)
+        elif(l_min==l_x):
+            #print("初期エラー(論理エラーなし)")
+            #show_error(ER_pure)
+            #print("初期エラー")
+            #show_error(ER_pure_x)
+            #print("推定したエラー(論理エラーX)")
+            #show_result(ER_x)
+            recovery(ER_x)
+            #print("訂正後")
+            #show_error(qubit)
+            #print("エラーチェーンの長さ")
+            #print(l,l_x,l_z,l_xz)
+        elif(l_min==l_z):
+            #print("初期エラー(論理エラーなし)")
+            #show_error(ER_pure)
+            #print("初期エラー")
+            #show_error(ER_pure_z)
+            #print("推定したエラー(論理エラーZ)")
+            #show_result(ER_z)
+            recovery(ER_z)
+            #print("訂正後")
+            #show_error(qubit)
+            #print("エラーチェーンの長さ")
+            #print(l,l_x,l_z,l_xz)
+        elif(l_min==l_xz):
+            #print("初期エラー(論理エラーなし)")
+            #show_error(ER_pure)
+            #print("初期エラー")
+            #show_error(ER_pure_xz)
+            #print("推定したエラー(論理エラーXZ)")
+            #show_error(ER_xz)
+            recovery(ER_xz)
+            #print("訂正後")
+            #show_error(qubit)
+            #print("エラーチェーンの長さ")
+            #print(l,l_x,l_z,l_xz)
+        
+        if(judge_logical()):
+            print("logical_error")
+            #print(p,i)
+            #exit()
+            events_logi+=1
+        print(p_phys,i)
+    p_logi=events_logi/num_sample
+    errorbar=math.sqrt(events_logi)/num_sample
+    list_p_phys.append(p_phys)
+    list_p_logi.append(p_logi)
+    list_errorbar.append(errorbar)
+    list_excution_time.append(excution_time/num_sample)
 
+print(list_p_logi)
+print(list_errorbar)
+print(list_excution_time)
 
 
 

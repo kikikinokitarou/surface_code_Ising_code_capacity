@@ -4,17 +4,27 @@ import numpy as np
 from numpy import zeros
 import re
 import copy
+import sys
+import pprint
 import random
 import cxxjij.utility as U
 import math
-import time
 
 
 
 
 
 
-ls=7 #lattice size
+ls=5
+
+
+
+
+
+
+
+
+ #lattice size
 num_qubit=ls*ls+(ls-1)*(ls-1)       #number of qubit
 num_stabilizer=ls*(ls-1)        #number of stabilizer
 syn =[ [0 for j in range(num_stabilizer)] for i in range(2)]        #シンドローム
@@ -28,18 +38,16 @@ ER_xz=[ [0 for j in range(num_qubit)] for i in range(3)]       #推定したエ�
 logical=[[0 for j in range(ls)] for i in range(2)]       #logical error判定用の行列
 start=[0 for i in range(2*num_stabilizer)]
 
+list_p_phys=[]
 list_p_logi=[]
 list_errorbar=[]
-list_p_phys=[]
-list_excution_time=[]
 
 
 #バイナリー変数
 x=Array.create('x',shape=(num_stabilizer), vartype='BINARY')
-z=Array.create('z',shape=(num_stabilizer), vartype='BINARY')
+#z=Array.create('z',shape=(num_stabilizer), vartype='BINARY')
 
-num_sample=10000
-    #number of sample
+num_sample=4000    #number of sample
 
 
 
@@ -97,16 +105,12 @@ def initialize():
         qubit[1][i]=0
 
 
-def gene_error(p_x,p_z,p_y):
+def gene_error(p_x):
     for i in range(num_qubit):
         p=random.random()
         if p<p_x:
             qubit[0][i]^=1
-        elif p<(p_x+p_z):
-            qubit[1][i]^=1
-        elif p<(p_x+p_z+p_y):
-            qubit[0][i]^=1
-            qubit[1][i]^=1
+        
 
 
 
@@ -137,7 +141,7 @@ def show_syndrome():
 
 #初期エラーの生成
 def gene_pureerror():
-    ER_pure=[ [0 for j in range(num_qubit)] for i in range(2)]      #エラーの初期配置
+    ER_pure=[ [0 for j in range(num_qubit)] for i in range(2)]       #推定したエラー
 
     #Xエラーについて
     for i in range(num_stabilizer):
@@ -163,7 +167,7 @@ def gene_pureerror():
     return ER_pure
     
 
-def gene_pureerror_x(ER_pure):
+def gene_pureerror_x(Er_pure):
     #初期エラーの更新
     ER_pure_x=copy.deepcopy(ER_pure)
     for i in range(ls):
@@ -183,7 +187,7 @@ def gene_pureerror_xz(ER_pure):
     for i in range(ls):
         ER_pure_xz[1][i]^=1
         ER_pure_xz[0][ls*i]^=1
-    return ER_pure_xz
+        return ER_pure_xz
 
 #コスト関数の作り方
 def gene_costfunc(ER_pure):
@@ -203,84 +207,35 @@ def gene_costfunc(ER_pure):
             
 
     #Zエラーについて
+    """
     for i in range(num_qubit):
         if i<ls**2:
             if i<ls:
-                H_cost-=10*binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i])
+                H_cost-=10*(ER_pure[1][i])*binary_to_spin(z[i])
             elif i>=ls*(ls-1):
                 H_cost-=10*binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i-ls])
             else:
                 H_cost-=10*binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i-ls])*binary_to_spin(z[i])
         else:
             H_cost-=10*binary_to_spin(ER_pure[0][i])*binary_to_spin(z[i-ls**2+(i-ls**2)//(ls-1)])*binary_to_spin(z[i-ls**2+(i-ls**2)//(ls-1)+1])
+    """
             
         
-    #Yエラーについて(XエラーとZエラーを打ち消す)
-
-    #2つのスタビライザーに挟まれたビット
-    H_cost-=20*spin_to_binary( -binary_to_spin(ER_pure[0][0])*binary_to_spin(x[0]) )*spin_to_binary( -binary_to_spin(ER_pure[1][0])*binary_to_spin(z[0]) )
-    H_cost-=20*spin_to_binary(- binary_to_spin(ER_pure[0][ls-1])*binary_to_spin(x[ls-2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls-1])*binary_to_spin(z[ls-1]) )
-    H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)])*binary_to_spin(x[(ls-1)**2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)])*binary_to_spin(z[ls*(ls-2)]))
-    H_cost-=20*spin_to_binary(- binary_to_spin(ER_pure[0][ls**2-1])*binary_to_spin(x[ls*(ls-1)-1]))*spin_to_binary(- binary_to_spin(ER_pure[1][ls**2-1])*binary_to_spin(z[ls*(ls-1)-1]))
-
-    #3つのスタビライザーに囲まれた量子ビット
-    for i in range(1,ls-1):
-        H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])*binary_to_spin(x[i-i//ls]))*spin_to_binary(-binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i]))
-        H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i])*binary_to_spin(x[(ls-1)*i]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i])*binary_to_spin(z[ls*i-ls])*binary_to_spin(z[ls*i]))
-        H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+(ls-1)])*binary_to_spin(x[ls*i+(ls-1)-(i+1)]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+(ls-1)])*binary_to_spin(z[ls*i+(ls-1)-ls])*binary_to_spin(z[ls*i+(ls-1)]))
-        H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)+i])*binary_to_spin(x[ls*(ls-1)+i-ls])*binary_to_spin(x[ls*(ls-1)+i-ls+1]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)+i])*binary_to_spin(z[ls*(ls-1)+i-ls]))
-        
-        
-    #4つのスタビライザーに囲まれた量子ビット
-    for i in range(1,ls-1):
-        for j in range(1,ls-1):
-            H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+j])*binary_to_spin(x[(ls-1)*i+j-1])*binary_to_spin(x[(ls-1)*i+j]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+j])*binary_to_spin(z[ls*(i-1)+j])*binary_to_spin(z[ls*i+j]))
-
+    
             
-            
-    for i in range(ls-1):
-        for j in range(ls-1):
-            H_cost-=20*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(x[(ls-1)*i+j])*binary_to_spin(x[(ls-1)*(i+1)+j]))*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(z[ls*i+j])*binary_to_spin(z[ls*i+j+1]))
-
-
-    #Yエラーについて（Yエラーを数える）
-
-    #2つのスタビライザーに挟まれたビット
-    H_cost+=10*spin_to_binary( -binary_to_spin(ER_pure[0][0])*binary_to_spin(x[0]) )*spin_to_binary( -binary_to_spin(ER_pure[1][0])*binary_to_spin(z[0]) )
-    H_cost+=10*spin_to_binary(- binary_to_spin(ER_pure[0][ls-1])*binary_to_spin(x[ls-2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls-1])*binary_to_spin(z[ls-1]) )
-    H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)])*binary_to_spin(x[(ls-1)**2]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)])*binary_to_spin(z[ls*(ls-2)]))
-    H_cost+=10*spin_to_binary(- binary_to_spin(ER_pure[0][ls**2-1])*binary_to_spin(x[ls*(ls-1)-1]))*spin_to_binary(- binary_to_spin(ER_pure[1][ls**2-1])*binary_to_spin(z[ls*(ls-1)-1]))
-
-    #3つのスタビライザーに囲まれた量子ビット
-    for i in range(1,ls-1):
-        H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][i])*binary_to_spin(x[i-i//ls-1])*binary_to_spin(x[i-i//ls]))*spin_to_binary(-binary_to_spin(ER_pure[1][i])*binary_to_spin(z[i]))
-        H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i])*binary_to_spin(x[(ls-1)*i]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i])*binary_to_spin(z[ls*i-ls])*binary_to_spin(z[ls*i]))
-        H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+(ls-1)])*binary_to_spin(x[ls*i+(ls-1)-(i+1)]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+(ls-1)])*binary_to_spin(z[ls*i+(ls-1)-ls])*binary_to_spin(z[ls*i+(ls-1)]))
-        H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*(ls-1)+i])*binary_to_spin(x[ls*(ls-1)+i-ls])*binary_to_spin(x[ls*(ls-1)+i-ls+1]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*(ls-1)+i])*binary_to_spin(z[ls*(ls-1)+i-ls]))
-        
-        
-    #4つのスタビライザーに囲まれた量子ビット
-    for i in range(1,ls-1):
-        for j in range(1,ls-1):
-            H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls*i+j])*binary_to_spin(x[(ls-1)*i+j-1])*binary_to_spin(x[(ls-1)*i+j]))*spin_to_binary(-binary_to_spin(ER_pure[1][ls*i+j])*binary_to_spin(z[ls*(i-1)+j])*binary_to_spin(z[ls*i+j]))
-
-            
-            
-    for i in range(ls-1):
-        for j in range(ls-1):
-            H_cost+=10*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(x[(ls-1)*i+j])*binary_to_spin(x[(ls-1)*(i+1)+j]))*spin_to_binary(-binary_to_spin(ER_pure[0][ls**2+(ls-1)*i+j])*binary_to_spin(z[ls*i+j])*binary_to_spin(z[ls*i+j+1]))
+   
     return H_cost
 
 #最適化
 def solve(H,schedule_list):
-    model=H.compile(strength=20)
+    model=H.compile()
     qubo , offset=model.to_qubo()
-    print(qubo)
     sampler=oj.SASampler(start,schedule=schedule_list)
     response=sampler.sample_qubo(qubo)
     for i in range(2):
         for j in range(num_stabilizer):
             result[i][j]=0
+    """
     for i in range(2):
         for j in range(num_stabilizer):
             if i==0:
@@ -289,6 +244,10 @@ def solve(H,schedule_list):
             else:
                 s='z['+str(j)+']'
                 result[i][j]=response.first.sample[s]
+    """
+    for i in range(num_stabilizer):
+        s="x["+str(i)+"]"
+        result[0][i]=response.first.sample[s]
 
 
 
@@ -329,7 +288,7 @@ def est_error(ER_pure):
     
 
 #推定したエラーの出力
-def show_result(error):
+def show_error(error):
     for i in range(num_qubit):
         if(error[0][i]==1):
             print('x: ',i)
@@ -339,16 +298,6 @@ def show_result(error):
     for i in range(num_qubit):
         if(error[2][i]==1):
             print('y: ',i)
-
-#推定したエラーの出力
-def show_error(error):
-    for i in range(num_qubit):
-        if(error[0][i]==1):
-            print('x: ',i)
-    for i in range(num_qubit):
-        if(error[1][i]==1):
-            print('z: ',i)
-
 #エラーの個数のカウント
 def count_error(error):
     l=0
@@ -359,7 +308,7 @@ def count_error(error):
 def recovery(error):
     for i in range(num_qubit):
         qubit[0][i]^=error[0][i]^error[2][i]
-        qubit[1][i]^=error[1][i]^error[2][i]
+        qubit[1][i]^=error[1][i]^error[1][i]
 
 def judge_logical():
     flg_logi_x=0
@@ -377,74 +326,65 @@ def judge_logical():
 
 gene_sta()
 gene_logical()
-schedule_list=gene_SAschedule(0.07)
-
-qubit[0][1]=1
-qubit[0][4]=1
 
 
+for p in range(3,11):
+    p_phys=p/100
+    p_logi=0
+    events_logi=0
+    schedule_list=gene_SAschedule(p_phys)
+    for i in range(num_sample):
+        initialize()
+        gene_error(p_phys)
+        syndrome_meas()
+        ER_pure=gene_pureerror()
+        H=gene_costfunc(ER_pure)
+        solve(H,schedule_list)
+        ER=est_error(ER_pure)
+        l=count_error(ER)
+        ER_pure_x=gene_pureerror_x(ER_pure)
+        H_x=gene_costfunc(ER_pure_x)
+        solve(H_x,schedule_list)
+        ER_x=est_error(ER_pure_x)
+        l_x=count_error(ER_x)
+        ER_pure_z=gene_pureerror_z(ER_pure)
+        H_z=gene_costfunc(ER_pure_z)
+        solve(H_z,schedule_list)
+        ER_z=est_error(ER_pure_z)
+        l_z=count_error(ER_z)
+        ER_pure_xz=gene_pureerror_xz(ER_pure)
+        H_xz=gene_costfunc(ER_pure_xz)
+        solve(H_xz,schedule_list)
+        ER_xz=est_error(ER_pure_xz)
+        l_xz=count_error(ER_xz)
+        
+        l_min=min(l,l_x,l_z,l_xz)
+        cou=0
+        if(l_min==l):
+            recovery(ER)
+        elif(l_min==l_x):
+            recovery(ER_x)
+        elif(l_min==l_z):
+            recovery(ER_z)
+            cou+=1
+        elif(l_min==l_xz):
+            recovery(ER_xz)
+            cou+=1
+        
+        if(judge_logical()):
+            print("logical_error")
+            events_logi+=1
+        print(p,i)
+    p_logi=events_logi/num_sample
+    errorbar=math.sqrt(events_logi)/num_sample
+    list_p_logi.append(p_logi)
+    list_errorbar.append(errorbar)
+    list_p_phys.append(p_phys)
 
-initialize()
-
-
-syndrome_meas()
-
-
-ER_pure=gene_pureerror()
-
-
-
-H=gene_costfunc(ER_pure)
-
-solve(H,schedule_list)
-ER=est_error(ER_pure)
-l=count_error(ER)
-
-
-ER_pure_x=gene_pureerror_x(ER_pure)
-H_x=gene_costfunc(ER_pure_x)
-solve(H_x,schedule_list)
-ER_x=est_error(ER_pure_x)
-l_x=count_error(ER_x)
-
-
-
-ER_pure_z=gene_pureerror_z(ER_pure)
-H_z=gene_costfunc(ER_pure_z)
-solve(H_z,schedule_list)
-ER_z=est_error(ER_pure_z)
-l_z=count_error(ER_z)
-
-
-ER_pure_xz=gene_pureerror_xz(ER_pure)
-H_xz=gene_costfunc(ER_pure_xz)
-solve(H_xz,schedule_list)
-ER_xz=est_error(ER_pure_xz)
-l_xz=count_error(ER_xz)
-
-
-l_min=min(l,l_x,l_z,l_xz)
-
-
-
-if(l_min==l):
-    recovery(ER)
-
-elif(l_min==l_x):
-    recovery(ER_x)
-
-elif(l_min==l_z):
-    recovery(ER_z)
-
-elif(l_min==l_xz):
-    recovery(ER_xz)
-
-
-if(judge_logical()):
-    print("logical_error")
-
-
-
+print(list_p_phys)
+print(list_p_logi)
+print(list_errorbar)
+print(cou)
 
 
 

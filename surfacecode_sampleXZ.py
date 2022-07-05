@@ -4,8 +4,11 @@ import numpy as np
 from numpy import zeros
 import re
 import copy
-import sys
-import pprint
+import cxxjij.utility as U
+
+
+schedule_list = U.make_classical_schedule_list(0.0001, 1.738, 41, 100)
+
 
 """"
 
@@ -21,9 +24,9 @@ num_stabilizer=ls*(ls-1)        #number of stabilizer
 syn =[ [0 for j in range(num_stabilizer)] for i in range(2)]        #シンドローム
 stabilizer=[[[0 for i in range(4)] for j in range(num_stabilizer)]for k in range(2)]        #スタビライザー用の行列(後程生成)
 qubit=[ [0 for j in range(num_qubit)] for i in range(2)]        #量子ビットのエラー情報
-ER_pure=[ [0 for j in range(num_qubit)] for i in range(2)]      #エラーの初期配置
 result=[[0 for j in range(num_stabilizer)] for i in range(2)]       #SAによる解
 ER=[ [0 for j in range(num_qubit)] for i in range(3)]       #推定したエラー
+start=[1 for i in range(2*num_stabilizer)]
 
 #バイナリー変数
 x=Array.create('x',shape=(num_stabilizer), vartype='BINARY')
@@ -92,10 +95,8 @@ def show_syndrome():
                     print("z: ",j)
 
 #初期エラーの生成
-def gene_pureerror(ER_pure):
-    for i in range(2):
-        for j in range(num_qubit):
-            ER_pure[i][j]=0
+def gene_pureerror():
+    ER_pure=[ [0 for j in range(num_qubit)] for i in range(2)]
 
     #Xエラーについて
     for i in range(num_stabilizer):
@@ -154,9 +155,11 @@ def gene_costfunc():
 
 #最適化
 def solve(H):
+
     model=H.compile()
     qubo , offset=model.to_qubo()
-    sampler=oj.SASampler(num_reads=1,num_sweeps=100000)
+    print(qubo)
+    sampler=oj.SASampler(start,schedule=schedule_list)
     response=sampler.sample_qubo(qubo)
     for i in range(2):
         for j in range(num_stabilizer):
@@ -230,17 +233,19 @@ def count_error(ER):
 
 
 #実際に生じるエラー
-qubit[0][5]=1
-qubit[0][29]=1
-qubit[1][1]=1
-qubit[1][26]=1
+#qubit[0][18]=1
+#qubit[0][35]=1
+qubit[1][2]=1
+qubit[1][8]=1
 
 gene_sta()
+#print(stabilizer)
 syndrome_meas()
-#show_syndrome()
-ER_pure=gene_pureerror(ER_pure)
+show_syndrome()
+ER_pure=gene_pureerror()
+#show_error(ER_pure)
 cou=0
-for i in range(1000):
+for i in range(1):
     H=gene_costfunc()
     solve(H)
     est_error(ER)
